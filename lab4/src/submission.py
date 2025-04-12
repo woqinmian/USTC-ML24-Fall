@@ -2,6 +2,7 @@ import math
 import json
 import gymnasium as gym
 import numpy as np
+import random
 from safetensors.numpy import save_file, load_file
 from collections import defaultdict, deque
 from typing import List, Dict, Tuple, Union, Optional
@@ -45,7 +46,11 @@ def valueIteration(
         # Return Q(state, action) based on V(state)
 
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        Q_value = 0
+        for nextState, prob, reward in succAndRewardProb.get((state, action), []):
+            Q_value += prob * (reward + discount * V[nextState])
+        return Q_value
+        # raise Exception("Not implemented yet")
         # END_YOUR_CODE
 
     def computePolicy(V: Dict[StateT, float]) -> Dict[StateT, ActionT]:
@@ -56,7 +61,20 @@ def valueIteration(
 
         # 1-a
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        policy = {}
+        for state in stateActions:
+            best_action = None
+            best_q_value = float('-inf')
+            for action in stateActions[state]:
+                q_value = computeQ(V, state, action)
+                if q_value > best_q_value:
+                    best_q_value = q_value
+                    best_action = action
+                elif q_value == best_q_value and action > best_action:
+                    best_action = action
+            policy[state] = best_action
+        return policy
+        # raise Exception("Not implemented yet")
         # END_YOUR_CODE
 
     print("Running valueIteration...")
@@ -69,7 +87,18 @@ def valueIteration(
 
         # 1-b
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        for state in stateActions:
+            max_q_value = float('-inf')
+            for action in stateActions[state]:
+                q_value = computeQ(V, state, action)
+                if q_value > max_q_value:
+                    max_q_value = q_value
+            newV[state] = max_q_value
+
+        delta = max(abs(newV[state] - V[state]) for state in stateActions)
+        if delta < epsilon:
+            break
+        # raise Exception("Not implemented yet")
         # END_YOUR_CODE
 
         V = newV
@@ -121,7 +150,10 @@ class ModelBasedMonteCarlo(RLAlgorithm):
 
         # 2-a
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        if explore and random.random() < explorationProb:
+            return random.choice(self.actions)  # 以探索概率选择随机动作
+        return self.pi.get(state, random.choice(self.actions))  # 选择最优策略中的动作或随机动作
+        # raise Exception("Not implemented yet")
         # END_YOUR_CODE
 
     def incorporateFeedback(self, state: StateT, action: ActionT, reward: int, nextState: StateT, terminal: bool):
@@ -149,7 +181,15 @@ class ModelBasedMonteCarlo(RLAlgorithm):
 
             # 2-b
             # BEGIN_YOUR_CODE
-            raise Exception("Not implemented yet")
+            for (s, a), nextStateCounts in self.tCounts.items():
+                totalTransitions = sum(nextStateCounts.values())
+                for nextState, count in nextStateCounts.items():
+                    prob = count / totalTransitions
+                    expectedReward = self.rTotal[(s, a)][nextState] / count
+                    succAndRewardProb[(s, a)].append((nextState, prob, expectedReward))
+            
+            self.pi = valueIteration(succAndRewardProb, self.discount)
+            # raise Exception("Not implemented yet")
             # END_YOUR_CODE
 
     def save_pretrained(self, path: Union[str, Path]):
@@ -214,7 +254,11 @@ class TabularQLearning(RLAlgorithm):
 
         # 3-a
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        if explore and random.random() < explorationProb:
+            return random.choice(self.actions)
+        
+        return max(self.actions, key=lambda action: self.Q[(state, action)])
+        # raise Exception("Not implemented yet")
         # END_YOUR_CODE
 
     # Call this function to get the step size to update the weights.
@@ -235,7 +279,10 @@ class TabularQLearning(RLAlgorithm):
 
         # 3-b
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        step_size = self.getStepSize()
+        future_val = 0 if terminal else max(self.Q[(nextState, a)] for a in self.actions)
+        self.Q[(state, action)] += step_size * (reward + self.discount * future_val - self.Q[(state, action)])
+        # raise Exception("Not implemented yet")
         # END_YOUR_CODE
 
     def save_pretrained(self, path: Union[str, Path]):

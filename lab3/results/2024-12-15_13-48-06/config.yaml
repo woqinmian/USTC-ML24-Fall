@@ -1,0 +1,6 @@
+embedding_dim: 20
+max_iter: 100
+n_components: 10
+results_path: null
+seed: 123
+use_pca: true

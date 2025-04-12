@@ -16,6 +16,7 @@ Y = df.iloc[:, 4]
 """
 在此填入你的代码
 """
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
 sc = StandardScaler()
 sc.fit(X)
@@ -27,14 +28,16 @@ standard_test = sc.transform(X_test)
 """
 在此填入你的代码
 """
-# 拟合数据
+mlp = MLPClassifier(hidden_layer_sizes=(50, ), max_iter=1000, random_state=42)
 """
 在此填入你的代码
 """
+mlp.fit(standard_train, Y_train)
 # 得到预测结果
 """
 在此填入你的代码
 """
+result = mlp.predict(standard_test)
 
 
 # 查看模型结果
@@ -66,24 +69,38 @@ class NeuralNetwork:
         """
         在此填入你的代码
         """
-        return
+        return 1 / (1 + np.exp(-x))
 
     def sigmoid_derivative(self, x):  # sigmoid 导数计算方式
         """
         在此填入你的代码
         """
-        return
+        return (1 - x) * x # 传入的x实际为sigmoid(x)
 
     def forward(self, X):
         """
         在此填入你的代码
         """
-        return
+        self.input_hidden = np.dot(X, self.weights_input_hidden) + self.bias_hidden # 隐藏层输入
+        self.hidden_output = self.sigmoid(self.input_hidden) # 隐藏层输出
+
+        self.input_output = np.dot(self.hidden_output, self.weights_hidden_output) + self.bias_output # 输出层输入
+        self.output_output = self.sigmoid(self.input_output) # 输出层输出
+        return self.output_output
 
     def backward(self, X, y, output, learning_rate):
         """
         在此填入你的代码
         """
+        output_error = y - output
+        output_delta = output_error * self.sigmoid_derivative(output) # 计算误差
+        self.weights_hidden_output += np.dot(self.hidden_output.T, output_delta) * learning_rate
+        self.bias_output += np.sum(output_delta, axis=0, keepdims=True) * learning_rate # 修改参数
+
+        hidden_error = np.dot(output_error, self.weights_hidden_output.T)
+        hidden_delta = hidden_error * self.sigmoid_derivative(self.hidden_output) # 计算误差
+        self.weights_input_hidden += np.dot(X.T, hidden_delta) * learning_rate
+        self.bias_hidden += np.sum(hidden_delta, axis=0, keepdims=True) * learning_rate # 修改参数
 
     def train(self, X, y, epochs, learning_rate):
         for epoch in range(epochs):

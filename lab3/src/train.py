@@ -18,7 +18,7 @@ from submission import GMM, PCA
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--embedding_dim", type=int, default=10)
+    parser.add_argument("--embedding_dim", type=int, default=20)
     parser.add_argument("--use_pca", action="store_true")
     parser.add_argument("--n_components", type=int, default=10)
     parser.add_argument("--max_iter", type=int, default=100)

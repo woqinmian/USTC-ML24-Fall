@@ -96,7 +96,12 @@ class GMM:
 
         # 1.1 E-step: Compute the responsibilities
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        for k in range(self.n_components):
+            prob = self._gaussian(X, self.means[k], np.linalg.inv(self.covs[k]), np.linalg.det(self.covs[k]))
+            gamma[:, k] = self.pi[k] * prob
+
+        gamma /= gamma.sum(axis=1, keepdims=True)
+        # raise Exception("Not implemented yet")
         # END_YOUR_CODE
         return gamma
 
@@ -113,7 +118,14 @@ class GMM:
 
         # 1.2 M-step: Update the parameters
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        self.means = gamma.T @ X / n_soft[:, np.newaxis]
+        self.covs = np.zeros((self.n_components, D, D))
+        for k in range(self.n_components):
+            diff = X - self.means[k]
+            self.covs[k] = (gamma[:, k, np.newaxis] * diff).T @ diff / n_soft[k]
+            self.covs[k] += 1e-6 * np.eye(D)
+        self.pi = n_soft / N
+        # raise Exception("Not implemented yet")
         # END_YOUR_CODE
 
     def _gaussian(self, X: np.ndarray, mean: np.ndarray, inv_cov: np.ndarray, det: float) -> np.ndarray:
@@ -217,7 +229,16 @@ class PCA:
         """
         # 2.1 Compute the principal components
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        N, D = X.shape
+        self.mean = np.mean(X, axis=0)
+        X_centered = X - self.mean
+        cov_matrix = np.cov(X_centered, rowvar=False)
+        eigvals, eigvecs = np.linalg.eigh(cov_matrix)
+        sorted_indices = np.argsort(eigvals)[::-1]
+        eigvals = eigvals[sorted_indices]
+        eigvecs = eigvecs[:, sorted_indices]
+        self.components = eigvecs[:, :self.dim].T
+        # raise Exception("Not implemented yet")
         # END_YOUR_CODE
 
     def transform(self, X: np.ndarray) -> np.ndarray:
@@ -278,10 +299,18 @@ def sample_from_gmm(gmm: GMM, pca: PCA, label: int, path: Union[str, Path]):
     """
     # 5.1
     # BEGIN_YOUR_CODE
-    raise Exception("Not implemented yet")
+    mean = gmm.means[label]
+    cov = gmm.covs[label]
+    sample = np.random.multivariate_normal(mean, cov)
+    sample_original = pca.inverse_transform(sample.reshape(1, -1))
+    sample_image = sample_original.reshape(28, 28)
+    sample_image = (sample_image - sample_image.min()) / (sample_image.max() - sample_image.min()) * 255
+    sample_image = sample_image.astype(np.uint8)
+    # raise Exception("Not implemented yet")
     # END_YOUR_CODE
 
     # Save an example image(you can change this part of the code if you want)
-    sample = Image.fromarray(sample[0], mode="L")  # if sample shape is (1, 28, 28)
+    sample = Image.fromarray(sample_image, mode="L")  # if sample shape is (1, 28, 28)
     path = Path(path)
+    path.mkdir(parents=True, exist_ok=True)
     sample.save(path / "gmm_sample.png")
